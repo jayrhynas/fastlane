@@ -360,6 +360,40 @@ module Spaceship
       all_reviews
     end
 
+    def get_review(app_id, platform, review_id)
+      r = request(:get, "ra/apps/#{app_id}/platforms/#{platform}/reviews?reviewId=#{review_id}")
+      parse_response(r, 'data')['reviews'][0]
+    end
+
+    def create_developer_response!(app_id, platform, review_id, response_text)
+      r = request(:post) do |req|
+        req.url "ra/apps/#{app_id}/platforms/#{platform}/reviews/#{review_id}/responses"
+        req.body = {
+          responseText: response_text,
+          reviewId: review_id
+        }.to_json
+        req.headers['Content-Type'] = 'application/json'
+      end
+
+      handle_itc_response(parse_response(r))
+
+      get_review(app_id, platform, review_id)['value']['developerResponse']
+    end
+
+    def update_developer_response!(app_id, platform, review_id, response_id, response_text)
+      r = request(:put) do |req|
+        req.url "ra/apps/#{app_id}/platforms/#{platform}/reviews/#{review_id}/responses/#{response_id}"
+        req.body = {
+          responseText: response_text
+        }.to_json
+        req.headers['Content-Type'] = 'application/json'
+      end
+
+      handle_itc_response(parse_response(r))
+      
+      get_review(app_id, platform, review_id)['value']['developerResponse']
+    end
+
     #####################################################
     # @!group AppVersions
     #####################################################

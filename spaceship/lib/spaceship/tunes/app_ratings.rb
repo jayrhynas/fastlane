@@ -69,6 +69,11 @@ module Spaceship
         'isHidden' => :hidden,
         'pendingState' => :state
       })
+
+      def update!(response_text)
+        raw_response = client.update_developer_response!(application.apple_id, application.platform, review_id, id, response_text)
+        initialize(raw_response)
+      end
     end
 
     class AppReview < TunesBase
@@ -118,6 +123,25 @@ module Spaceship
       def responded?
         return true if raw_developer_response
         false
+      end
+
+      # @return (Bool) true if new response was created, false if existing response was updated
+      def respond!(response_text)
+        if responded?
+          developer_response.update!(response_text)
+          return false
+        else
+          raw_response = client.create_developer_response!(application.apple_id, application.platform, id, response_text)
+          raw_developer_response = raw_response
+
+          response_attrs = {}
+          response_attrs = raw_developer_response if raw_developer_response
+          response_attrs[:application] = application
+          response_attrs[:review_id] = id
+          developer_response = DeveloperResponse.factory(response_attrs)
+
+          return true
+        end
       end
     end
   end
